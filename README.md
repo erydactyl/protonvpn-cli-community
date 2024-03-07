@@ -1,4 +1,5 @@
 <h1 align="center">ProtonVPN-CLI</h1>
+<h2 align="center">Erydactyl's fork to remove the nag about the desktop app</h2>
 <p align="center">
   <img src="resources/images/linux-cli-banner.png" alt="Logo"></img>
 </p>
