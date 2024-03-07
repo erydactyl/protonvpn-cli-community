@@ -78,12 +78,6 @@ def main():
 def cli():
     """Run user's input command."""
 
-    if shutil.which("NetworkManager") or shutil.which("nmcli"):
-        print(
-            "\nProtonVPN now offers an official Linux app which includes a graphical user interface.\n"
-            "Visit https://protonvpn.com/support/official-linux-client to upgrade."
-        )
-
     # Initial log values
     change_file_owner(os.path.join(CONFIG_DIR, "pvpn-cli.log"))
     logger.debug("###########################")
