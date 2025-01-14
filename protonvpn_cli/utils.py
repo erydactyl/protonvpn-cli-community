@@ -20,6 +20,7 @@ from .constants import (
     VERSION, OVPN_FILE, CLIENT_SUFFIX
 )
 import distro
+import socket
 
 
 def call_api(endpoint, json_format=True, handle_errors=True):
@@ -282,36 +283,61 @@ def create_openvpn_config(serverlist, protocol, ports):
     """
 
     # Split Tunneling
+    content = []
+
     try:
         if get_config_value("USER", "split_tunnel") == "1":
             split = True
+            with open(SPLIT_TUNNEL_FILE, "r") as f:
+                content = f.readlines()            
         else:
             split = False
     except KeyError:
         split = False
 
+    if os.getenv("PVPN_SPLIT_TUNNEL"):
+        split = True
+
     ip_nm_pairs = []
 
     if split:
-        with open(SPLIT_TUNNEL_FILE, "r") as f:
-            content = f.readlines()
+
+        if os.getenv("PVPN_SPLIT_TUNNEL"):
+            content += [item.strip() for item in os.getenv("PVPN_SPLIT_TUNNEL").split(",")]
+
+        # deduplicate content
+        content = list(set(content))
 
         for line in content:
             line = line.rstrip("\n")
             netmask = "255.255.255.255"
-            if not is_valid_ip(line):
+            if not (is_valid_ip(line) or is_valid_domain(line)):
                 logger.debug("[!] '{0}' is invalid. Skipped.".format(line))
                 continue
-            if "/" in line:
-                ip, cidr = line.split("/")
-                netmask = cidr_to_netmask(int(cidr))
+            if is_valid_domain(line):
+                try:
+                    ip = socket.gethostbyname_ex(line)[2]  # returns a list
+                except socket.gaierror:
+                    logger.debug("[!] '{0}' is invalid. Skipped.".format(line))
+                    continue
             else:
-                ip = line
+                if "/" in line:
+                    ip, cidr = line.split("/")
+                    netmask = cidr_to_netmask(int(cidr))
+                else:
+                    ip = line
 
-            ip_nm_pairs.append({"ip": ip, "nm": netmask})
+            # check if ip is a string or a list (multiple IPs)
+            if isinstance(ip, str):
+                ip_nm_pairs.append({"ip": ip, "nm": netmask})
+            else:
+                for item in ip:
+                    ip_nm_pairs.append({"ip": item, "nm": netmask})
 
     # IPv6
     ipv6_disabled = is_ipv6_disabled()
+
+    ignore_ping_restart = get_config_value("USER", "ignore_ping_restart") == "1"
 
     j2_values = {
         "openvpn_protocol": protocol,
@@ -319,8 +345,16 @@ def create_openvpn_config(serverlist, protocol, ports):
         "openvpn_ports": ports,
         "split": split,
         "ip_nm_pairs": ip_nm_pairs,
-        "ipv6_disabled": ipv6_disabled
+        "ipv6_disabled": ipv6_disabled,
+        "ignore_ping_restart": ignore_ping_restart
     }
+
+    if os.getenv("PVPN_SPLIT_TUNNEL"):
+        j2_values["split_type"] = os.getenv("PVPN_SPLIT_TUNNEL")
+    elif get_config_value("USER", "split_tunnel") == "1":
+        j2_values["split_type"] = get_config_value("USER", "split_type")
+    else:
+        j2_values["split_type"] = "blacklist"  # default for CLI args-based split tunneling (no config file)
 
     render_j2_template(template_file="openvpn_template.j2", destination_file=OVPN_FILE, values=j2_values)
 
@@ -501,6 +535,32 @@ def is_valid_ip(ipaddr):
     if valid_ip_re.match(ipaddr):
         return True
 
+    else:
+        return False
+
+
+def is_valid_domain(domain):
+    """
+    Validates a domain name. Returns True if the domain is valid, otherwise False.
+
+    Args:
+        domain (str): A domain name as a string. Whitespaces will be stripped.
+
+    Returns:
+        bool: Returns True if domain is valid, otherwise False.
+
+    Example:
+        >>> is_valid_domain("google.com")
+        True
+        >>> is_valid_domain("invalid_domain")
+        False
+    """
+
+    # Check for valid characters and length in each domain part
+    pattern = re.compile(r"^(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.){1,}(?!-)[A-Za-z0-9-]{1,63}(?<!-)$")
+
+    if pattern.match(domain.strip()):
+        return True
     else:
         return False
 
