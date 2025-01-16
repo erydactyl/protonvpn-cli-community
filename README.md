@@ -1,9 +1,8 @@
-Forked to add a hardcoded override for the default ping-restart option (pushed by the server) and a `down` script (to be placed in `~/.pvpn-cli/vpn-down.sh`.
-
 <hr>
 
 <h1 align="center">ProtonVPN-CLI</h1>
-<h2 align="center">Erydactyl's fork to remove the nag about the desktop app</h2>
+<h2 align="center">Erydactyl's fork to merge more recent pull requests</h2>
+<p align=”center">Note: since Proton posted to Bluesky and Mastodon that they support the US Republican party and that it falls on the community to maintain the product for them, being a paid company, please consider moving to an alternative provider. I will still maintain this fork for 2025 unless someone else takes on the responsibility as I would still like others to be able to use the product that they paid for.
 <p align="center">
   <img src="resources/images/linux-cli-banner.png" alt="Logo"></img>
 </p>
