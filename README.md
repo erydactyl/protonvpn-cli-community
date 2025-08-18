@@ -3,6 +3,7 @@
 <h1 align="center">ProtonVPN-CLI</h1>
 <h2 align="center">Erydactyl's fork to merge more recent pull requests</h2>
 <p align=”center">Note: since Proton posted to Bluesky and Mastodon that they support the US Republican party and that it falls on the community to maintain the product for them, being a paid company, please consider moving to an alternative provider. I will still maintain this fork for 2025 unless someone else takes on the responsibility as I would still like others to be able to use the product that they paid for.
+<h2 align="center">No longer functioning because Proton started blocking the old client despite the new one working if you don't use systemd</h2>
 <p align="center">
   <img src="resources/images/linux-cli-banner.png" alt="Logo"></img>
 </p>
